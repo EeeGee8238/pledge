@@ -35,21 +35,27 @@ $Promise.prototype._internalReject = function (reason) {
 $Promise.prototype.then = function (successCb, errorCb) {
   if (typeof successCb !== 'function') successCb = undefined;
   if (typeof errorCb !== 'function') errorCb = undefined;
-  this._handlerGroups.push({ successCb, errorCb });
-  if (this._state !== 'pending') this._callHandlers();
+  const downstreamPromise = new Promise (() => {});
+  this._handlerGroups.push({ successCb, errorCb, downstreamPromise });
+  this._callHandlers();
+  return downstreamPromise;
 }
 
 $Promise.prototype._callHandlers = function () {
+  if (this._state === 'pending') return;
+  const handler = this._state === 'fulfilled' ? 'successCb': 'errorCb';
+  
   this._handlerGroups.forEach((group) => {
-    if (group.successCb) {
-      group.successCb(this._value);
-      this._handlerGroups = [];
+    if (group[handler]) {
+      group[handler](this._value);
     }
-    if (group.errorCb) {
-      group.errorCb(this._value);
-      this._handlerGroups = [];
-    }
+    this._handlerGroups = [];
   })
+}
+
+$Promise.prototype.catch = function (handler) {
+  this.then(null, handler);
+  this._callHandlers();
 }
 
 
