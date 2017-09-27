@@ -8,8 +8,13 @@ function $Promise(executor) {
     throw TypeError(/executor.+function/i);
   }
   this._state = 'pending';
-  this._value = null;
-};
+  this._value = undefined;
+  
+  const resolve = this._internalResolve.bind(this);
+  const reject = this._internalReject.bind(this)
+
+  executor(resolve, reject);
+}
 
 $Promise.prototype._internalResolve = function (data) {
   if (this._state === 'pending') {
@@ -23,14 +28,6 @@ $Promise.prototype._internalReject = function (reason) {
     this._state = 'rejected';
   }
 };
-
-
-
-
-
-
-
-
 
 /*-------------------------------------------------------
 The spec was designed to work with Test'Em, so we don't
